@@ -17,4 +17,4 @@ And you will likely have to adjust permissions too (unless you want to
 run this program as root):
 % sudo chown $USER /dev/usbmon0
 
-
+This version added WebUSB code generator.

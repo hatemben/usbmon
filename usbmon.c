@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 	struct usbmon_packet hdr;
 	struct usbmon_get arg;
 	unsigned char filter_dev[128];
-	int fd, r, n;
+	int fd, r, n, i;
 	unsigned busmask = 0;
 
 	memset(filter_dev, 0, sizeof(filter_dev));
@@ -96,6 +96,47 @@ int main(int argc, char **argv)
 			hdr.flag_data ? hdr.flag_data : ' ',
 #endif
 			hdr.length);
+
+// WebUSB code generator
+ switch (_xfer[hdr.xfer]) {
+    case 'C': // Control 
+        if (hdr.epnum & 0x80) { // Control Input
+	    	if (hdr.type == 'S')
+	    	{
+	  			printf("\n device.controlTransferIn({\n    requestType: 0x%02d,\n    recipient: 0x%02d,\n    request: 0x%02d, \n    value: 0x%02d, \n    index: 0x%02x}) \n",
+	  			 hdr.s.setup[3], hdr.s.setup[0], hdr.s.setup[1],hdr.s.setup[2], hdr.s.setup[4]);
+	    	}
+
+		} else { // Control Output
+	    	if (hdr.type == 'S')
+	    	{
+	  			printf("\n device.controlTransferOut({\n    requestType: 0x%02d,\n    recipient: 0x%02d,\n    request: 0x%02d, \n    value: 0x%02d, \n    index: 0x%02x}) \n",
+	  			 hdr.s.setup[3], hdr.s.setup[0], hdr.s.setup[1],hdr.s.setup[2], hdr.s.setup[4]);
+	  		}
+		}
+    break;
+    case 'B': // Bulk
+        if (hdr.epnum & 0x80) { // Bulk Input
+
+        	if (hdr.type == 'S')
+        	{
+        		printf("\ndevice.transferIn(1, 0x%04x) \n",hdr.length);
+        	}
+
+        } else { //Bulk output
+
+			if (hdr.type == 'S') {
+	        	printf("\ndevice.transferOut(2, line2buffer('");
+				for (i = 0; i < hdr.len_cap; i++) 
+					printf((i & 3) ? " %02x" : " %02x",data[i]);
+
+				printf("',%02d)) \n",hdr.length);
+			}
+
+        }
+        break;
+    }
+
 		if (hdr.type == 'S') {
 			if (hdr.xfer == 2) {
 				printf(" %02x %02x %02x%02x %02x%02x %02x%02x\n",
